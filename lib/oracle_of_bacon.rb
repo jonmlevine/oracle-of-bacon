@@ -21,10 +21,16 @@ class OracleOfBacon
 
   def from_does_not_equal_to
     # YOUR CODE HERE
+    if @from == @to then
+      errors[:base] << "From should not be the same as To (#{@from})"
+    end
   end
 
-  def initialize(api_key='')
+  def initialize(api_key='38b99ce9ec87')
     # your code here
+    @api_key = api_key
+    @from = 'Kevin Bacon'
+    @to = 'Kevin Bacon'
   end
 
   def find_connections
@@ -37,6 +43,7 @@ class OracleOfBacon
       # convert all of these into a generic OracleOfBacon::NetworkError,
       #  but keep the original error message
       # your code here
+      error[:base] << "OracleOfBacon::Network Error"
     end
     # your code here: create the OracleOfBacon::Response object
   end
@@ -51,17 +58,30 @@ class OracleOfBacon
     # create a Response object from a string of XML markup.
     def initialize(xml)
       @doc = Nokogiri::XML(xml)
+      puts(@doc)
       parse_response
     end
 
     private
 
     def parse_response
-      if ! @doc.xpath('/error').empty?
+      if ! @doc.xpath('/error').empty? 
         parse_error_response
+      end
       # your code here: 'elsif' clauses to handle other responses
       # for responses not matching the 3 basic types, the Response
-      # object should have type 'unknown' and data 'unknown response'         
+      # object should have type 'unknown' and data 'unknown response'     
+      if ! @doc.xpath('/link').empty? 
+        @data = Array.new
+        @type = :graph
+        @doc.xpath('/link/actor | /link/movie').each {|link| @data << link.content}
+      elsif ! @doc.xpath('/spellcheck').empty? 
+        @data = Array.new
+        @type = :spellcheck
+        @doc.xpath('/spellcheck/match').each {|link| @data << link.content}
+      else
+        @type = :unknown
+        @data = "/unknown/i"
       end
     end
     def parse_error_response
