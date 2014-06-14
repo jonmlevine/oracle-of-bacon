@@ -43,14 +43,16 @@ class OracleOfBacon
       # convert all of these into a generic OracleOfBacon::NetworkError,
       #  but keep the original error message
       # your code here
-      error[:base] << "OracleOfBacon::Network Error"
+      raise OracleOfBacon::NetworkError
     end
     # your code here: create the OracleOfBacon::Response object
+    response = OracleOfBacon::Response.new(xml)
   end
 
   def make_uri_from_arguments
     # your code here: set the @uri attribute to properly-escaped URI
     #   constructed from the @from, @to, @api_key arguments
+    @uri = "http://oracleofbacon.org/cgi-bin/xml?p=#{CGI.escape(@api_key)}&a=#{CGI.escape(@from)}&b=#{CGI.escape(@to)}"
   end
       
   class Response
@@ -58,7 +60,6 @@ class OracleOfBacon
     # create a Response object from a string of XML markup.
     def initialize(xml)
       @doc = Nokogiri::XML(xml)
-      puts(@doc)
       parse_response
     end
 
@@ -67,26 +68,34 @@ class OracleOfBacon
     def parse_response
       if ! @doc.xpath('/error').empty? 
         parse_error_response
-      end
       # your code here: 'elsif' clauses to handle other responses
       # for responses not matching the 3 basic types, the Response
       # object should have type 'unknown' and data 'unknown response'     
-      if ! @doc.xpath('/link').empty? 
-        @data = Array.new
-        @type = :graph
-        @doc.xpath('/link/actor | /link/movie').each {|link| @data << link.content}
+      elsif ! @doc.xpath('/link').empty? 
+        parse_graph_response
       elsif ! @doc.xpath('/spellcheck').empty? 
-        @data = Array.new
-        @type = :spellcheck
-        @doc.xpath('/spellcheck/match').each {|link| @data << link.content}
+        parse_spellcheck_response
       else
-        @type = :unknown
-        @data = "/unknown/i"
+        parse_unknown_response
       end
     end
     def parse_error_response
       @type = :error
       @data = 'Unauthorized access'
+    end
+    def parse_graph_response
+        @data = Array.new
+        @type = :graph
+        @doc.xpath('/link/actor | /link/movie').each {|link| @data << link.content}
+    end
+    def parse_spellcheck_response
+        @data = Array.new
+        @type = :spellcheck
+        @doc.xpath('/spellcheck/match').each {|link| @data << link.content}
+    end
+    def parse_unknown_response
+        @type = :unknown
+        @data = "/unknown/i"
     end
   end
 end
