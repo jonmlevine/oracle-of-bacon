@@ -43,6 +43,7 @@ class OracleOfBacon
       # convert all of these into a generic OracleOfBacon::NetworkError,
       #  but keep the original error message
       # your code here
+      errors[:base] << e.message
       raise OracleOfBacon::NetworkError
     end
     # your code here: create the OracleOfBacon::Response object
